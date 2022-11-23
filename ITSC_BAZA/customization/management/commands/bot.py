@@ -1,6 +1,9 @@
+import logging
 import os
 from distutils.util import strtobool
 
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.dispatcher import FSMContext
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from aiogram import Bot, Dispatcher, types
@@ -8,36 +11,155 @@ from aiogram.utils import executor
 from dotenv import load_dotenv, find_dotenv
 
 from .keyboards.inline.choice_buttons import choice
+from .states import Name, Course, Role, Spec, Inf_about
 from ...models import team_member
 from asgiref.sync import sync_to_async
 from aiogram.types import InlineQuery, \
-    InputTextMessageContent, InlineQueryResultArticle
+    InputTextMessageContent, InlineQueryResultArticle, CallbackQuery
 
 load_dotenv(find_dotenv())
-
 
 # Считываем настройки
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 AUTH = strtobool(os.getenv('AUTH'))
 
-
 bot = Bot(token=BOT_TOKEN)
-dp = Dispatcher(bot)
+dp = Dispatcher(bot, storage=MemoryStorage())
+
 
 @dp.message_handler(commands=['menu'])
 async def show_menu(message: types.message):
     if (await check_data_base(message)):
-        await message.answer(text=f"Добро пожаловать в основное меню.\nЗдесь вы можете персонализировать свою карточку:)",
-                            reply_markup=choice)
+        await message.answer(
+            text=f"Добро пожаловать в основное меню.\nЗдесь вы можете персонализировать свою карточку:)",
+            reply_markup=choice)
 
 
 async def check_data_base(message: types.Message):
     try:
-        p, obj = await sync_to_async(team_member.objects.get_or_create, thread_sensitive=True)(tg_id=message.from_user.id, tg_name=message.from_user.username)
+        p, obj = await sync_to_async(team_member.objects.get_or_create, thread_sensitive=True)(
+            tg_id=message.from_user.id)
+        if p.tg_name != message.from_user.username:
+            p.tg_name = message.from_user.username
+            await sync_to_async(p.save, thread_sensitive=True)()
         return True
     except:
         return False
 
+
+@dp.callback_query_handler(text_contains="name")
+async def change_name(call: CallbackQuery):
+    await call.answer(cache_time=60)
+    callback_data = call.data
+    logging.info(f"call = {callback_data}")
+
+    await call.message.answer("Введите новое ФИО")
+    await Name.First.set()
+
+
+@dp.callback_query_handler(text_contains="course")
+async def change_сourse(call: CallbackQuery):
+    await call.answer(cache_time=60)
+    callback_data = call.data
+    logging.info(f"call = {callback_data}")
+
+    await call.message.answer("Введите новый курс")
+    await Course.First.set()
+
+
+@dp.callback_query_handler(text_contains="role")
+async def change_role(call: CallbackQuery):
+    await call.answer(cache_time=60)
+    callback_data = call.data
+    logging.info(f"call = {callback_data}")
+
+    await call.message.answer("Введите новую роль")
+    await Role.First.set()
+
+
+@dp.callback_query_handler(text_contains="spec")
+async def change_spec(call: CallbackQuery):
+    await call.answer(cache_time=60)
+    callback_data = call.data
+    logging.info(f"call = {callback_data}")
+
+    await call.message.answer("Введите новую специализацию")
+    await Spec.First.set()
+
+
+@dp.callback_query_handler(text_contains="inf_about")
+async def change_inf_about(call: CallbackQuery):
+    await call.answer(cache_time=60)
+    callback_data = call.data
+    logging.info(f"call = {callback_data}")
+
+    await call.message.answer("Введите новую дополнительную информацию о себе")
+    await Inf_about.First.set()
+
+
+@dp.message_handler(state=Name.First)
+async def answer_NFirst(message: types.Message, state: FSMContext):
+    answer = message.text
+    bd = await sync_to_async(team_member.objects.get, thread_sensitive=True)(tg_id=message.from_user.id)
+    bd.name = answer
+    await sync_to_async(bd.save, thread_sensitive=True)()
+    await message.answer("ФИО успешно изменено")
+    await message.answer(text=f"Добро пожаловать в основное меню.\nЗдесь вы можете персонализировать свою карточку:)",
+                         reply_markup=choice)
+    await state.finish()
+
+
+@dp.message_handler(lambda message: not message.text.isdigit() or int(message.text) <=0 or int(message.text) > 5, state=Course.First)
+async def process_age_invalid(message: types.Message):
+    return await message.reply("Введите, пожалуйста корректый курс")
+
+
+@dp.message_handler(state=Course.First)
+async def answer_CourseFirst(message: types.Message, state: FSMContext):
+    answer = int(message.text)
+    bd = await sync_to_async(team_member.objects.get, thread_sensitive=True)(tg_id=message.from_user.id)
+    bd.course = answer
+    await sync_to_async(bd.save, thread_sensitive=True)()
+    await message.answer("Курс успешно изменён")
+    await message.answer(text=f"Добро пожаловать в основное меню.\nЗдесь вы можете персонализировать свою карточку:)",
+                         reply_markup=choice)
+    await state.finish()
+
+
+@dp.message_handler(state=Role.First)
+async def answer_RoleFirst(message: types.Message, state: FSMContext):
+    answer = message.text
+    bd = await sync_to_async(team_member.objects.get, thread_sensitive=True)(tg_id=message.from_user.id)
+    bd.role = answer
+    await sync_to_async(bd.save, thread_sensitive=True)()
+    await message.answer("Роль успешно изменена")
+    await message.answer(text=f"Добро пожаловать в основное меню.\nЗдесь вы можете персонализировать свою карточку:)",
+                         reply_markup=choice)
+    await state.finish()
+
+
+@dp.message_handler(state=Spec.First)
+async def answer_SpecFirst(message: types.Message, state: FSMContext):
+    answer = message.text
+    bd = await sync_to_async(team_member.objects.get, thread_sensitive=True)(tg_id=message.from_user.id)
+    bd.spec = answer
+    await sync_to_async(bd.save, thread_sensitive=True)()
+    await message.answer("Специализация успешно изменена")
+    await message.answer(text=f"Добро пожаловать в основное меню.\nЗдесь вы можете персонализировать свою карточку:)",
+                         reply_markup=choice)
+    await state.finish()
+
+
+@dp.message_handler(state=Inf_about.First)
+async def answer_InfAboutFirst(message: types.Message, state: FSMContext):
+    answer = message.text
+    bd = await sync_to_async(team_member.objects.get, thread_sensitive=True)(tg_id=message.from_user.id)
+    bd.inf_about = answer
+    await sync_to_async(bd.save, thread_sensitive=True)()
+    await message.answer("Дополнительная информация успешно изменена")
+    await message.answer(text=f"Добро пожаловать в основное меню.\nЗдесь вы можете персонализировать свою карточку:)",
+                         reply_markup=choice)
+    await state.finish()
 
 
 class Command(BaseCommand):
