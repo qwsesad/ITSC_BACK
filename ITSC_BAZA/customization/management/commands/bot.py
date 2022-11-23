@@ -26,26 +26,17 @@ dp = Dispatcher(bot)
 
 @dp.message_handler(commands=['menu'])
 async def show_menu(message: types.message):
-    await message.answer(text=f"Добро пожаловать в основное меню.\nЗдесь вы можете персонализировать свою карточку:)",
-                         reply_markup=choice)
+    if (await check_data_base(message)):
+        await message.answer(text=f"Добро пожаловать в основное меню.\nЗдесь вы можете персонализировать свою карточку:)",
+                            reply_markup=choice)
 
-@dp.message_handler(commands=['start'])
+
 async def check_data_base(message: types.Message):
-    if AUTH:
-        try:
-            obj = await sync_to_async(team_member.objects.get, thread_sensitive=True)(tg_id=message.from_user.id)
-        except team_member.DoesNotExist:
-            await message.reply(f"Извини, тебя нет в базе.\nЕсли ты член команды, обратись, пожалуйста, к администратору.")
-    else:
-        p, obj = await sync_to_async(team_member.objects.get_or_create, thread_sensitive=True)(tg_id=message.from_user.id)
-
-
-"""
-@dp.message_handler(commands=['start', 'help'])
-async def send_welcome(message: types.Message):
-    await message.reply(f"Добро пожаловать в основное меню.\nЗдесь вы можете персонализировать свою карточку:)")
-"""
-
+    try:
+        p, obj = await sync_to_async(team_member.objects.get_or_create, thread_sensitive=True)(tg_id=message.from_user.id, tg_name=message.from_user.username)
+        return True
+    except:
+        return False
 
 
 

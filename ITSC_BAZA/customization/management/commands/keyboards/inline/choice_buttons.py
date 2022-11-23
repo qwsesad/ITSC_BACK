@@ -1,7 +1,7 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from .callback_data import choose_callback
 
-choice = InlineKeyboardMarkup(row_width=4)
+choice = InlineKeyboardMarkup(row_width=3)
 
 
 name = InlineKeyboardButton(text = "Сменить имя", callback_data=choose_callback.new(
@@ -25,12 +25,15 @@ course = InlineKeyboardButton(text = "Сменить курс", callback_data=ch
 inf_about = InlineKeyboardButton(text = "Сменить информацию о себе", callback_data=choose_callback.new(
     what="inf_about"
 ))
-
+tg_name = InlineKeyboardButton(text = "Сменить ссылку в тг", callback_data=choose_callback.new(
+    what="tg_name"
+))
 
 choice.insert(name)
 choice.insert(color)
 choice.insert(photo)
 choice.insert(role)
-choice.insert(spec)
 choice.insert(course)
+choice.insert(tg_name)
+choice.insert(spec)
 choice.insert(inf_about)
