@@ -4,6 +4,7 @@ from distutils.util import strtobool
 
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters import Text
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from aiogram import Bot, Dispatcher, types
@@ -11,7 +12,7 @@ from aiogram.utils import executor
 from dotenv import load_dotenv, find_dotenv
 
 from .keyboards.inline.choice_buttons import choice
-from .states import Name, Course, Role, Spec, Inf_about
+from .states import Name, Course, Role, Spec, Inf_about, Color, Photo
 from ...models import team_member
 from asgiref.sync import sync_to_async
 from aiogram.types import InlineQuery, \
@@ -45,6 +46,24 @@ async def check_data_base(message: types.Message):
         return True
     except:
         return False
+
+
+@dp.message_handler(state='*', commands='cancel')
+@dp.message_handler(Text(equals='cancel', ignore_case=True), state='*')
+async def cancel_handler(message: types.Message, state: FSMContext):
+    """
+    Allow user to cancel any action
+    """
+    current_state = await state.get_state()
+    if current_state is None:
+        return
+
+    logging.info('Cancelling state %r', current_state)
+    # Cancel state and inform user about it
+    await state.finish()
+    # And remove keyboard (just in case)
+    await message.reply('Отменено.', reply_markup=types.ReplyKeyboardRemove())
+
 
 
 @dp.callback_query_handler(text_contains="name")
@@ -95,6 +114,30 @@ async def change_inf_about(call: CallbackQuery):
 
     await call.message.answer("Введите новую дополнительную информацию о себе")
     await Inf_about.First.set()
+
+
+@dp.callback_query_handler(text_contains="color")
+async def change_color(call: CallbackQuery):
+    await call.answer(cache_time=60)
+    callback_data = call.data
+    logging.info(f"call = {callback_data}")
+
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+    markup.add("red", "blue", "green", "default")
+
+    await call.message.answer("Выберите цвет для вашей карточки", reply_markup=markup)
+    await Color.First.set()
+
+
+@dp.callback_query_handler(text_contains="photo")
+async def change_photo(call: CallbackQuery):
+    await call.answer(cache_time=60)
+    callback_data = call.data
+    logging.info(f"call = {callback_data}")
+
+
+    await call.message.answer("Отправьте вашу фотографию")
+    await Photo.First.set()
 
 
 @dp.message_handler(state=Name.First)
@@ -157,6 +200,38 @@ async def answer_InfAboutFirst(message: types.Message, state: FSMContext):
     bd.inf_about = answer
     await sync_to_async(bd.save, thread_sensitive=True)()
     await message.answer("Дополнительная информация успешно изменена")
+    await message.answer(text=f"Добро пожаловать в основное меню.\nЗдесь вы можете персонализировать свою карточку:)",
+                         reply_markup=choice)
+    await state.finish()
+
+
+
+@dp.message_handler(lambda message: message.text not in ["red", "blue", "green", "default"], state=Color.First)
+async def process_gender_invalid(message: types.Message):
+    return await message.reply("Плохой цвет) Выберите один из наших")
+
+
+@dp.message_handler(state=Color.First)
+async def answer_Color(message: types.Message, state: FSMContext):
+    markup = types.ReplyKeyboardRemove()
+    answer = message.text
+    bd = await sync_to_async(team_member.objects.get, thread_sensitive=True)(tg_id=message.from_user.id)
+    bd.color = answer
+    await sync_to_async(bd.save, thread_sensitive=True)()
+    await message.answer("Цвет успешно изменён", reply_markup=markup)
+    await message.answer(text=f"Добро пожаловать в основное меню.\nЗдесь вы можете персонализировать свою карточку:)",
+                         reply_markup=choice)
+    await state.finish()
+
+
+@dp.message_handler(state=Photo.First, content_types=['photo'])
+async def answer_Photo(message: types.Message, state: FSMContext):
+    print(f'{settings.MEDIA_ROOT}/images/{message.from_user.id}_photo.jpg')
+    await message.photo[-1].download(f'{settings.MEDIA_ROOT}/images/{message.from_user.id}_photo.jpg')
+    bd = await sync_to_async(team_member.objects.get, thread_sensitive=True)(tg_id=message.from_user.id)
+    bd.photo = f'/images/{message.from_user.id}_photo.jpg'
+    await sync_to_async(bd.save, thread_sensitive=True)()
+    await message.answer("Фото успешно изменено")
     await message.answer(text=f"Добро пожаловать в основное меню.\nЗдесь вы можете персонализировать свою карточку:)",
                          reply_markup=choice)
     await state.finish()

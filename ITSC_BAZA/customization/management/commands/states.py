@@ -19,3 +19,11 @@ class Spec(StatesGroup):
 
 class Inf_about(StatesGroup):
     First = State()
+
+
+class Color(StatesGroup):
+    First = State()
+
+
+class Photo(StatesGroup):
+    First = State()
