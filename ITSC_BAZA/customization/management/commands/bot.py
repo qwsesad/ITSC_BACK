@@ -1,5 +1,7 @@
 import logging
 import os
+import time
+import re
 from distutils.util import strtobool
 
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
@@ -15,8 +17,7 @@ from .keyboards.inline.choice_buttons import choice
 from .states import Name, Course, Role, Spec, Inf_about, Color, Photo
 from ...models import team_member
 from asgiref.sync import sync_to_async
-from aiogram.types import InlineQuery, \
-    InputTextMessageContent, InlineQueryResultArticle, CallbackQuery
+from aiogram.types import CallbackQuery
 
 load_dotenv(find_dotenv())
 
@@ -27,6 +28,10 @@ AUTH = strtobool(os.getenv('AUTH'))
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())
 
+
+@dp.message_handler(commands=['start'])
+async def start(message: types.message):
+    await show_menu(message)
 
 @dp.message_handler(commands=['menu'])
 async def show_menu(message: types.message):
@@ -226,10 +231,18 @@ async def answer_Color(message: types.Message, state: FSMContext):
 
 @dp.message_handler(state=Photo.First, content_types=['photo'])
 async def answer_Photo(message: types.Message, state: FSMContext):
-    print(f'{settings.MEDIA_ROOT}/images/{message.from_user.id}_photo.jpg')
-    await message.photo[-1].download(f'{settings.MEDIA_ROOT}/images/{message.from_user.id}_photo.jpg')
+
+    regex = re.compile(fr'{message.from_user.id}_.*')
+    for root, dirs, files in os.walk(f'{settings.MEDIA_ROOT}/images/'):
+        for file in files:
+            if regex.match(file):
+                print(file)
+                os.remove(f'{settings.MEDIA_ROOT}/images/{file}')
+
+    t = time.time()
+    await message.photo[-1].download(f'{settings.MEDIA_ROOT}/images/{message.from_user.id}_{t}_photo.jpg')
     bd = await sync_to_async(team_member.objects.get, thread_sensitive=True)(tg_id=message.from_user.id)
-    bd.photo = f'/images/{message.from_user.id}_photo.jpg'
+    bd.photo = f'/images/{message.from_user.id}_{t}_photo.jpg'
     await sync_to_async(bd.save, thread_sensitive=True)()
     await message.answer("Фото успешно изменено")
     await message.answer(text=f"Добро пожаловать в основное меню.\nЗдесь вы можете персонализировать свою карточку:)",
