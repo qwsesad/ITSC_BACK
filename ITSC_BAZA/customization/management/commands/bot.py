@@ -231,7 +231,6 @@ async def answer_Color(message: types.Message, state: FSMContext):
 
 @dp.message_handler(state=Photo.First, content_types=['photo'])
 async def answer_Photo(message: types.Message, state: FSMContext):
-
     regex = re.compile(fr'{message.from_user.id}_.*')
     for root, dirs, files in os.walk(f'{settings.MEDIA_ROOT}/images/'):
         for file in files:
