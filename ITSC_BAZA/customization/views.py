@@ -6,7 +6,8 @@ from .serializer import CustomizationSerializer
 from rest_framework import generics
 
 class CustomizationListGet(generics.ListCreateAPIView):
-    queryset = team_member.objects.all()
+    queryset = team_member.objects.exclude(name='').exclude(name__isnull=True).exclude(
+                                           spec='').exclude(spec__isnull=True).exclude(course__isnull=True)
     serializer_class = CustomizationSerializer
 
 def home_page(request):
