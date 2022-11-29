@@ -36,9 +36,20 @@ async def start(message: types.message):
 @dp.message_handler(commands=['menu'])
 async def show_menu(message: types.message):
     if (await check_data_base(message)):
-        await message.answer(
-            text=f"Добро пожаловать в основное меню.\nЗдесь вы можете персонализировать свою карточку:)",
-            reply_markup=choice)
+        if (not (AUTH) or (await check_auth(message))):
+            await message.answer(
+                text=f"Добро пожаловать в основное меню.\nЗдесь вы можете персонализировать свою карточку:)",
+                reply_markup=choice)
+        else:
+            await message.answer("Извините, у вас нет доступа, обратитесь к администратору")
+
+
+async def check_auth(message: types.Message):
+    bd = await sync_to_async(team_member.objects.get, thread_sensitive=True)(tg_id=message.from_user.id)
+    if (bd.secret_role>1):
+        return True
+    else:
+        return False
 
 
 async def check_data_base(message: types.Message):
@@ -74,76 +85,89 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 @dp.callback_query_handler(text_contains="name")
 async def change_name(call: CallbackQuery):
     await call.answer(cache_time=60)
-    callback_data = call.data
-    logging.info(f"call = {callback_data}")
-
-    await call.message.answer("Введите новое ФИО")
-    await Name.First.set()
-
+    if (not (AUTH) or (await check_auth(call))):
+        callback_data = call.data
+        logging.info(f"call = {callback_data}")
+        await call.message.answer("Введите новое ФИО")
+        await Name.First.set()
+    else:
+        await call.message.answer("Извините, у вас нет доступа, обратитесь к администратору")
 
 @dp.callback_query_handler(text_contains="course")
 async def change_сourse(call: CallbackQuery):
     await call.answer(cache_time=60)
-    callback_data = call.data
-    logging.info(f"call = {callback_data}")
-
-    await call.message.answer("Введите новый курс")
-    await Course.First.set()
+    if (not (AUTH) or (await check_auth(call))):
+        await call.answer(cache_time=60)
+        callback_data = call.data
+        logging.info(f"call = {callback_data}")
+        await call.message.answer("Введите новый курс")
+        await Course.First.set()
+    else:
+        await call.message.answer("Извините, у вас нет доступа, обратитесь к администратору")
 
 
 @dp.callback_query_handler(text_contains="role")
 async def change_role(call: CallbackQuery):
     await call.answer(cache_time=60)
-    callback_data = call.data
-    logging.info(f"call = {callback_data}")
-
-    await call.message.answer("Введите новую роль")
-    await Role.First.set()
+    if (not (AUTH) or (await check_auth(call))):
+        await call.answer(cache_time=60)
+        callback_data = call.data
+        logging.info(f"call = {callback_data}")
+        await call.message.answer("Введите новую роль")
+        await Role.First.set()
+    else:
+        await call.message.answer("Извините, у вас нет доступа, обратитесь к администратору")
 
 
 @dp.callback_query_handler(text_contains="spec")
 async def change_spec(call: CallbackQuery):
     await call.answer(cache_time=60)
-    callback_data = call.data
-    logging.info(f"call = {callback_data}")
-
-    await call.message.answer("Введите новую специализацию")
-    await Spec.First.set()
-
+    if (not (AUTH) or (await check_auth(call))):
+        await call.answer(cache_time=60)
+        callback_data = call.data
+        logging.info(f"call = {callback_data}")
+        await call.message.answer("Введите новую специализацию")
+        await Spec.First.set()
+    else:
+        await call.message.answer("Извините, у вас нет доступа, обратитесь к администратору")
 
 @dp.callback_query_handler(text_contains="inf_about")
 async def change_inf_about(call: CallbackQuery):
     await call.answer(cache_time=60)
-    callback_data = call.data
-    logging.info(f"call = {callback_data}")
-
-    await call.message.answer("Введите новую дополнительную информацию о себе")
-    await Inf_about.First.set()
-
+    if (not (AUTH) or (await check_auth(call))):
+        await call.answer(cache_time=60)
+        callback_data = call.data
+        logging.info(f"call = {callback_data}")
+        await call.message.answer("Введите новую дополнительную информацию о себе")
+        await Inf_about.First.set()
+    else:
+        await call.message.answer("Извините, у вас нет доступа, обратитесь к администратору")
 
 @dp.callback_query_handler(text_contains="color")
 async def change_color(call: CallbackQuery):
     await call.answer(cache_time=60)
-    callback_data = call.data
-    logging.info(f"call = {callback_data}")
-
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
-    markup.add("red", "blue", "green", "default")
-
-    await call.message.answer("Выберите цвет для вашей карточки", reply_markup=markup)
-    await Color.First.set()
-
+    if (not (AUTH) or (await check_auth(call))):
+        await call.answer(cache_time=60)
+        callback_data = call.data
+        logging.info(f"call = {callback_data}")
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+        markup.add("red", "blue", "green", "default")
+        await call.message.answer("Выберите цвет для вашей карточки", reply_markup=markup)
+        await Color.First.set()
+    else:
+        await call.message.answer("Извините, у вас нет доступа, обратитесь к администратору")
 
 @dp.callback_query_handler(text_contains="photo")
 async def change_photo(call: CallbackQuery):
     await call.answer(cache_time=60)
-    callback_data = call.data
-    logging.info(f"call = {callback_data}")
-
-
-    await call.message.answer("Отправьте вашу фотографию")
-    await Photo.First.set()
-
+    if (not (AUTH) or (await check_auth(call))):
+        await call.answer(cache_time=60)
+        callback_data = call.data
+        logging.info(f"call = {callback_data}")
+        await call.message.answer("Отправьте вашу фотографию")
+        await Photo.First.set()
+    else:
+        await call.message.answer("Извините, у вас нет доступа, обратитесь к администратору")
 
 @dp.message_handler(state=Name.First)
 async def answer_NFirst(message: types.Message, state: FSMContext):
