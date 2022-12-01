@@ -17,7 +17,7 @@ from .keyboards.inline.choice_buttons import choice
 from .states import Name, Course, Role, Spec, Inf_about, Color, Photo
 from ...models import team_member
 from asgiref.sync import sync_to_async
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, UserProfilePhotos
 
 load_dotenv(find_dotenv())
 
@@ -59,6 +59,15 @@ async def check_data_base(message: types.Message):
         if p.tg_name != message.from_user.username:
             p.tg_name = message.from_user.username
             await sync_to_async(p.save, thread_sensitive=True)()
+        if p.photo == '' or p.photo is None:
+            photos = bot.get_user_profile_photos(message.from_user.id)
+            user_profile_photo: UserProfilePhotos = await bot.get_user_profile_photos(message.from_user.id)
+            if len(user_profile_photo.photos[0]) > 0:
+                t = time.time()
+                file = await bot.get_file(user_profile_photo.photos[0][0].file_id)
+                await bot.download_file(file.file_path, f'{settings.MEDIA_ROOT}/images/{message.from_user.id}_{t}_photo.jpg')
+                p.photo = f'images/{message.from_user.id}_{t}_photo.jpg'
+                await sync_to_async(p.save, thread_sensitive=True)()
         return True
     except:
         return False
