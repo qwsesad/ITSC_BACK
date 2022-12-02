@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 import os
 from dotenv import load_dotenv, find_dotenv
 from pathlib import Path
-from distutils.util import strtobool
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,7 +25,7 @@ load_dotenv(find_dotenv())
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = strtobool(os.getenv('DEBUG'))
+DEBUG = int(os.getenv('DEBUG'))
 
 ALLOWED_HOSTS = ['*']
 
@@ -163,7 +162,4 @@ VITE_APP_DIR = BASE_DIR / "src"
 # If it's not, collectstatic won't copy your bundle to production.
 
 STATIC_URL = "/static/"
-STATICFILES_DIRS = [
-    VITE_APP_DIR / "dist",
-]
 STATIC_ROOT = BASE_DIR / "staticfiles"

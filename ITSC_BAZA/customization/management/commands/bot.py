@@ -56,7 +56,7 @@ async def check_data_base(message: types.Message):
     try:
         p, obj = await sync_to_async(team_member.objects.get_or_create, thread_sensitive=True)(
             tg_id=message.from_user.id)
-        if p.tg_name != message.from_user.username:
+        if p.tg_name != message.from_user.username and message.from_user.username is not None:
             p.tg_name = message.from_user.username
             await sync_to_async(p.save, thread_sensitive=True)()
         if p.photo == '' or p.photo is None:
