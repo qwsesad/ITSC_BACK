@@ -1,0 +1,25 @@
+# docker-compose.yml
+version: '3'
+
+services:
+  bot:
+    build: ./
+    container_name: 'bot'
+    restart: always
+    command: python manage.py bot
+    volumes:
+      - .:/ITSC_BAZA
+    env_file:
+      - .env
+
+  gunicorn:
+    build: ./
+    container_name: 'gunicorn'
+    restart: always
+    command: gunicorn -b 0.0.0.0:8000 ITSC_BAZA.wsgi --reload
+    volumes:
+      - .:/ITSC_BAZA
+    ports:
+      - 8000:8000
+    env_file:
+      - .env
