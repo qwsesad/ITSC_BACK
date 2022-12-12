@@ -11,6 +11,8 @@ services:
       - .:/ITSC_BAZA
     env_file:
       - .env
+    depends_on:
+      - db
 
   gunicorn:
     build: ./
@@ -23,3 +25,20 @@ services:
       - 8000:8000
     env_file:
       - .env
+    depends_on:
+      - db
+
+  db:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=hello_django
+      - POSTGRES_PASSWORD=hello_django
+      - POSTGRES_DB=hello_django_dev
+    ports:
+      - 5431:5432
+
+
+volumes:
+  postgres_data:
